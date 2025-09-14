@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,9 +27,17 @@ import { generateSKU } from "@/utils/skuGenerator";
 import { formatQuantity } from "@/lib/utils";
 import { generateStockReportPDF } from "@/utils/stockReportPdfGenerator";
 import { units as predefinedUnits } from "@/data/storeData";
+import { usePageOptimization } from "@/hooks/usePageOptimization";
 
 const Products = () => {
   const { toast } = useToast();
+  const { queryDefaults } = usePageOptimization({ 
+    pageName: 'products',
+    preloadData: true,
+    staleTime: 3 * 60 * 1000, // 3 minutes - products change less frequently
+    refetchInterval: false // Manual refresh for products
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);

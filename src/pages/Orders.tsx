@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { salesApi } from "@/services/api";
@@ -10,6 +10,7 @@ import { OrdersFilters } from "@/components/orders/OrdersFilters";
 import { OrdersTable } from "@/components/orders/OrdersTable";
 import { useOrderPDFGenerator } from "@/components/orders/OrdersPDFGenerator";
 import { generateOrdersReportPDF } from "@/utils/ordersReportPdfGenerator";
+import { usePageOptimization } from "@/hooks/usePageOptimization";
 
 interface Sale {
   id: number;
@@ -38,6 +39,13 @@ interface Sale {
 const Orders = () => {
   const { toast } = useToast();
   const { generateOrderPDF } = useOrderPDFGenerator();
+  const { queryDefaults } = usePageOptimization({ 
+    pageName: 'orders',
+    preloadData: true,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 5 * 60 * 1000 // 5 minutes
+  });
+
   const [orders, setOrders] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);

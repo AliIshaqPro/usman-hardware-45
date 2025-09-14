@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, memo, useCallback, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,8 @@ import { Phone, MapPin, Mail, Calendar, Edit, Download, Building, Users } from "
 import { generateCustomerPurchasePDF } from "@/utils/customerPdfGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { apiConfig } from "@/utils/apiConfig";
+import { OptimizedCardList } from "@/components/ui/optimized-card-list";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceOptimization";
 
 interface Customer {
   id: string;
@@ -29,11 +31,12 @@ interface CustomersListProps {
   onEditCustomer: (customer: Customer) => void;
 }
 
-export const CustomersList = ({ customers, loading, onSelectCustomer, onEditCustomer }: CustomersListProps) => {
+const CustomersListComponent = ({ customers, loading, onSelectCustomer, onEditCustomer }: CustomersListProps) => {
+  usePerformanceMonitor('CustomersList');
   const { toast } = useToast();
   const [exportingCustomer, setExportingCustomer] = useState<string | null>(null);
 
-  const getCustomerTypeColor = (type: string) => {
+  const getCustomerTypeColor = useCallback((type: string) => {
     const colors = {
       Temporary: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100",
       "Semi-Permanent": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100",
@@ -43,13 +46,13 @@ export const CustomersList = ({ customers, loading, onSelectCustomer, onEditCust
       business: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100",
     };
     return colors[type] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100";
-  };
+  }, []);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     return status === "active" || !status ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
-  };
+  }, []);
 
-  const handleExportCustomer = async (customer: Customer) => {
+  const handleExportCustomer = useCallback(async (customer: Customer) => {
     try {
       setExportingCustomer(customer.id);
       
@@ -108,7 +111,99 @@ export const CustomersList = ({ customers, loading, onSelectCustomer, onEditCust
     } finally {
       setExportingCustomer(null);
     }
-  };
+  }, [toast]);
+
+  // Memoized customer card component
+  const renderCustomerCard = useCallback((customer: Customer, index: number) => (
+    <Card key={customer.id} className="hover:shadow-md transition-shadow mb-3">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left Section - Customer Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2">
+              <h3 className="font-semibold text-lg text-foreground truncate">
+                {customer.name}
+              </h3>
+              <Badge className={`text-xs ${getCustomerTypeColor(customer.type || 'business')}`}>
+                {customer.type || 'business'}
+              </Badge>
+              <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
+                {customer.status || 'active'}
+              </Badge>
+              {(customer.currentBalance || 0) > 0 && (
+                <Badge variant="destructive" className="text-xs">
+                  Due: PKR {customer.currentBalance?.toLocaleString()}
+                </Badge>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Phone className="h-4 w-4" />
+                <span>{customer.phone || 'No phone'}</span>
+              </div>
+              {customer.email && (
+                <div className="flex items-center gap-1">
+                  <Mail className="h-4 w-4" />
+                  <span className="truncate max-w-[200px]">{customer.email}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                <span className="truncate max-w-[200px]">{customer.address || 'No address'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Section - Financial Info */}
+          <div className="flex items-center gap-6 text-sm">
+            <div className="text-center">
+              <p className="text-muted-foreground">Total Purchases</p>
+              <p className="font-bold text-green-600">PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-muted-foreground">Credit Limit</p>
+              <p className="font-medium text-foreground">PKR {customer.creditLimit?.toLocaleString() || '0'}</p>
+            </div>
+            {customer.lastPurchase && (
+              <div className="text-center">
+                <p className="text-muted-foreground">Last Purchase</p>
+                <p className="font-medium text-foreground">{customer.lastPurchase}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right Section - Actions */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
+              onClick={() => handleExportCustomer(customer)}
+              disabled={exportingCustomer === customer.id}
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
+              onClick={() => onEditCustomer(customer)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onSelectCustomer(customer)}
+            >
+              View Details
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  ), [getCustomerTypeColor, getStatusColor, handleExportCustomer, exportingCustomer, onEditCustomer, onSelectCustomer]);
 
   if (loading) {
     return (
@@ -146,97 +241,24 @@ export const CustomersList = ({ customers, loading, onSelectCustomer, onEditCust
   }
 
   return (
-    <div className="space-y-3">
-      {customers.map((customer) => (
-        <Card key={customer.id} className="hover:shadow-md transition-shadow">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              {/* Left Section - Customer Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-lg text-foreground truncate">
-                    {customer.name}
-                  </h3>
-                  <Badge className={`text-xs ${getCustomerTypeColor(customer.type || 'business')}`}>
-                    {customer.type || 'business'}
-                  </Badge>
-                  <Badge className={`text-xs ${getStatusColor(customer.status)}`}>
-                    {customer.status || 'active'}
-                  </Badge>
-                  {(customer.currentBalance || 0) > 0 && (
-                    <Badge variant="destructive" className="text-xs">
-                      Due: PKR {customer.currentBalance?.toLocaleString()}
-                    </Badge>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Phone className="h-4 w-4" />
-                    <span>{customer.phone || 'No phone'}</span>
-                  </div>
-                  {customer.email && (
-                    <div className="flex items-center gap-1">
-                      <Mail className="h-4 w-4" />
-                      <span className="truncate max-w-[200px]">{customer.email}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span className="truncate max-w-[200px]">{customer.address || 'No address'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Middle Section - Financial Info */}
-              <div className="flex items-center gap-6 text-sm">
-                <div className="text-center">
-                  <p className="text-muted-foreground">Total Purchases</p>
-                  <p className="font-bold text-green-600">PKR {customer.totalPurchases?.toLocaleString() || '0'}</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-muted-foreground">Credit Limit</p>
-                  <p className="font-medium text-foreground">PKR {customer.creditLimit?.toLocaleString() || '0'}</p>
-                </div>
-                {customer.lastPurchase && (
-                  <div className="text-center">
-                    <p className="text-muted-foreground">Last Purchase</p>
-                    <p className="font-medium text-foreground">{customer.lastPurchase}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Section - Actions */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-green-50 hover:bg-green-100 text-green-600 border-green-200"
-                  onClick={() => handleExportCustomer(customer)}
-                  disabled={exportingCustomer === customer.id}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200"
-                  onClick={() => onEditCustomer(customer)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onSelectCustomer(customer)}
-                >
-                  View Details
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <>
+      {/* Use virtualized list for large datasets */}
+      {customers.length > 20 ? (
+        <OptimizedCardList
+          data={customers}
+          renderItem={renderCustomerCard}
+          height={600}
+          itemSize={120}
+          getItemKey={(customer) => customer.id}
+        />
+      ) : (
+        <div className="space-y-3">
+          {customers.map((customer, index) => renderCustomerCard(customer, index))}
+        </div>
+      )}
+    </>
   );
 };
+
+export const CustomersList = memo(CustomersListComponent);
+CustomersList.displayName = 'CustomersList';

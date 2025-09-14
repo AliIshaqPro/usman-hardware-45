@@ -34,6 +34,7 @@ interface CartSidebarProps {
   isCustomerDialogOpen: boolean;
   isQuickCustomerOpen: boolean;
   isCollapsed?: boolean;
+  isProcessingSale?: boolean;
   onSetSelectedCustomer: (customer: any) => void;
   onSetIsCustomerDialogOpen: (open: boolean) => void;
   onSetIsQuickCustomerOpen: (open: boolean) => void;
@@ -56,6 +57,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
   isCustomerDialogOpen,
   isQuickCustomerOpen,
   isCollapsed = false,
+  isProcessingSale = false,
   onSetSelectedCustomer,
   onSetIsCustomerDialogOpen,
   onSetIsQuickCustomerOpen,
@@ -88,8 +90,17 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
 
   const handlePriceSave = (productId: number) => {
     const newPrice = parseFloat(tempPrice);
-    if (!isNaN(newPrice) && newPrice > 0 && onUpdateItemPrice) {
-      onUpdateItemPrice(productId, newPrice);
+    console.log('Price save attempt:', { productId, tempPrice, newPrice, isValid: !isNaN(newPrice) && newPrice > 0 });
+    
+    if (!isNaN(newPrice) && newPrice > 0) {
+      if (onUpdateItemPrice) {
+        console.log('Calling onUpdateItemPrice with:', productId, newPrice);
+        onUpdateItemPrice(productId, newPrice);
+      } else {
+        console.error('onUpdateItemPrice function not available');
+      }
+    } else {
+      console.error('Invalid price value:', tempPrice);
     }
     setPriceEditingItem(null);
     setTempPrice("");
@@ -290,14 +301,23 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <p className="font-medium text-xs text-card-foreground">{item.name}</p>
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs text-muted-foreground">
-                          Original: PKR {item.price.toLocaleString()} / {item.unit}
-                        </p>
-                        {item.adjustedPrice && item.adjustedPrice !== item.price && (
-                          <Badge variant="secondary" className="text-xs">Negotiated</Badge>
-                        )}
-                      </div>
+                       <div className="flex items-center gap-2">
+                         <p className="text-xs text-muted-foreground">
+                           Original: PKR {item.price.toLocaleString()} / {item.unit}
+                         </p>
+                         {item.adjustedPrice && item.adjustedPrice !== item.price && (
+                           <Badge 
+                             variant="secondary" 
+                             className={`text-xs ${
+                               item.adjustedPrice > item.price 
+                                 ? 'bg-red-100 text-red-800 border-red-300' 
+                                 : 'bg-green-100 text-green-800 border-green-300'
+                             }`}
+                           >
+                             {item.adjustedPrice > item.price ? 'Increased' : 'Reduced'}
+                           </Badge>
+                         )}
+                       </div>
                     </div>
                     <Button
                       variant="ghost"
@@ -313,13 +333,22 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
                   <div className="mb-2">
                     {priceEditingItem === item.productId ? (
                       <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          value={tempPrice}
-                          onChange={(e) => setTempPrice(e.target.value)}
-                          className="h-6 text-xs flex-1"
-                          placeholder="New price"
-                        />
+                         <Input
+                           type="number"
+                           step="0.01"
+                           min="0.01"
+                           value={tempPrice}
+                           onChange={(e) => setTempPrice(e.target.value)}
+                           className="h-6 text-xs flex-1"
+                           placeholder="New price"
+                           onKeyPress={(e) => {
+                             if (e.key === 'Enter') {
+                               handlePriceSave(item.productId);
+                             } else if (e.key === 'Escape') {
+                               handlePriceCancel();
+                             }
+                           }}
+                         />
                         <Button
                           variant="outline"
                           size="sm"
@@ -450,10 +479,11 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({
           </div>
           <Button
             onClick={onCheckout}
-            className="w-full bg-green-600 hover:bg-green-700 text-white h-10 text-sm font-medium"
+            disabled={isProcessingSale}
+            className="w-full bg-green-600 hover:bg-green-700 text-white h-10 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             size="lg"
           >
-            Complete Sale ({paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'credit' ? 'Credit' : 'Card'})
+            {isProcessingSale ? 'Processing Sale...' : `Complete Sale (${paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'credit' ? 'Credit' : 'Card'})`}
           </Button>
         </div>
       )}

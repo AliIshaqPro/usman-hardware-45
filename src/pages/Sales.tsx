@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { formatQuantity } from "@/lib/utils";
+import { usePageOptimization } from "@/hooks/usePageOptimization";
 
 interface CartItem {
   productId: number;
@@ -37,6 +38,13 @@ interface CartItem {
 const Sales = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const { queryDefaults } = usePageOptimization({ 
+    pageName: 'sales',
+    preloadData: true,
+    staleTime: 1 * 60 * 1000, // 1 minute - sales data needs to be fresh
+    refetchInterval: 2 * 60 * 1000 // 2 minutes
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -58,6 +66,7 @@ const Sales = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isCartCollapsed, setIsCartCollapsed] = useState(false);
   const [productsLayout, setProductsLayout] = useState(5); // Default to 5 products per line
+  const [isProcessingSale, setIsProcessingSale] = useState(false); // Prevent double-clicking complete sale
 
   // Load layout preference from localStorage
   useEffect(() => {
@@ -333,15 +342,33 @@ const formatPakistaniTime = (timeString: string): string => {
   };
 
   const updateItemPrice = (productId: number, newPrice: number) => {
-    setCart(cart.map(item => 
-      item.productId === productId 
-        ? { ...item, adjustedPrice: newPrice }
-        : item
-    ));
+    console.log('updateItemPrice called with:', { productId, newPrice });
+    
+    setCart(prevCart => {
+      const updatedCart = prevCart.map(item => {
+        if (item.productId === productId) {
+          console.log('Updating item price:', { 
+            productId: item.productId, 
+            oldPrice: item.price, 
+            oldAdjustedPrice: item.adjustedPrice,
+            newPrice 
+          });
+          return { ...item, adjustedPrice: newPrice };
+        }
+        return item;
+      });
+      console.log('Updated cart:', updatedCart);
+      return updatedCart;
+    });
+    
+    const originalItem = cart.find(item => item.productId === productId);
+    const originalPrice = originalItem?.price || 0;
+    const priceChange = newPrice - originalPrice;
+    const changeType = priceChange > 0 ? 'increased' : priceChange < 0 ? 'reduced' : 'set';
     
     toast({
       title: "Price Updated",
-      description: "Item price has been adjusted for negotiation",
+      description: `Item price has been ${changeType} to PKR ${newPrice.toLocaleString()} (${priceChange >= 0 ? '+' : ''}${priceChange.toLocaleString()} from original)`,
     });
   };
 
@@ -401,7 +428,19 @@ const formatPakistaniTime = (timeString: string): string => {
       return;
     }
 
+    // Prevent double-clicking - check if sale is already being processed
+    if (isProcessingSale) {
+      toast({
+        title: "Processing Sale",
+        description: "Please wait, your sale is being processed...",
+        variant: "default"
+      });
+      return;
+    }
+
     try {
+      setIsProcessingSale(true); // Set processing flag to prevent double-clicks
+      
       // Calculate total without any tax
       const totalAmount = cart.reduce((sum, item) => {
         const finalPrice = item.adjustedPrice || item.price;
@@ -484,6 +523,8 @@ const formatPakistaniTime = (timeString: string): string => {
         description: `Error: ${error.message || 'Unknown error occurred'}`,
         variant: "destructive"
       });
+    } finally {
+      setIsProcessingSale(false); // Reset processing flag
     }
   };
 
@@ -933,6 +974,7 @@ const formatPakistaniTime = (timeString: string): string => {
               {/* Layout Dropdown */}
               <Select value={productsLayout.toString()} onValueChange={(value) => handleLayoutChange(parseInt(value))}>
                 <SelectTrigger className="w-24 h-9 md:h-10 bg-background border-input">
+                  <LayoutGrid className="h-4 w-4" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background border-input shadow-lg z-50">
@@ -1008,6 +1050,7 @@ const formatPakistaniTime = (timeString: string): string => {
           isCustomerDialogOpen={isCustomerDialogOpen}
           isQuickCustomerOpen={isQuickCustomerOpen}
           isCollapsed={isCartCollapsed}
+          isProcessingSale={isProcessingSale}
           onSetSelectedCustomer={setSelectedCustomer}
           onSetIsCustomerDialogOpen={setIsCustomerDialogOpen}
           onSetIsQuickCustomerOpen={setIsQuickCustomerOpen}
@@ -1106,13 +1149,14 @@ const formatPakistaniTime = (timeString: string): string => {
                 </div>
                 
                 <Button 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={isProcessingSale}
                   onClick={() => {
                     handleCheckout();
                     setIsCartOpen(false);
                   }}
                 >
-                  Complete Sale ({paymentMethod})
+                  {isProcessingSale ? 'Processing Sale...' : `Complete Sale (${paymentMethod})`}
                 </Button>
               </div>
             )}
