@@ -95,13 +95,19 @@ export const LazyPageWrapper: React.FC<LazyPageWrapperProps> = memo(({
     setShowTransition(true);
     setIsLoading(true);
 
-    // Hide transition preloader after component is ready
+    // Hide transition preloader after a minimum time to ensure data loading
     const timer = setTimeout(() => {
       setShowTransition(false);
-      setIsLoading(false);
-    }, 500); // Brief delay for smooth transition
+    }, 800); // Increased delay to ensure data loads
 
-    return () => clearTimeout(timer);
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200); // Keep loading state longer for better UX
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(loadingTimer);
+    };
   }, [pageName]);
 
   const CustomFallback = memo(() => (
