@@ -1,6 +1,7 @@
-import React, { Suspense, memo } from 'react';
+import React, { Suspense, memo, useState, useEffect } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageTransitionPreloader } from '@/components/PageTransitionPreloader';
 
 interface LazyPageWrapperProps {
   children: React.ReactNode;
@@ -86,17 +87,46 @@ export const LazyPageWrapper: React.FC<LazyPageWrapperProps> = memo(({
   pageName,
   fallback 
 }) => {
+  const [showTransition, setShowTransition] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Show transition preloader initially
+    setShowTransition(true);
+    setIsLoading(true);
+
+    // Hide transition preloader after component is ready
+    const timer = setTimeout(() => {
+      setShowTransition(false);
+      setIsLoading(false);
+    }, 500); // Brief delay for smooth transition
+
+    return () => clearTimeout(timer);
+  }, [pageName]);
+
+  const CustomFallback = memo(() => (
+    <>
+      <PageTransitionPreloader pageName={pageName} isVisible={showTransition} />
+      {!showTransition && (fallback || <DefaultFallback pageName={pageName} />)}
+    </>
+  ));
+
   return (
-    <ErrorBoundary 
-      FallbackComponent={(props) => (
-        <ErrorFallback {...props} pageName={pageName} />
-      )}
-      onReset={() => window.location.reload()}
-    >
-      <Suspense fallback={fallback || <DefaultFallback pageName={pageName} />}>
-        {children}
-      </Suspense>
-    </ErrorBoundary>
+    <>
+      <PageTransitionPreloader pageName={pageName} isVisible={showTransition} />
+      <ErrorBoundary 
+        FallbackComponent={(props) => (
+          <ErrorFallback {...props} pageName={pageName} />
+        )}
+        onReset={() => window.location.reload()}
+      >
+        <Suspense fallback={<CustomFallback />}>
+          <div className={`transition-opacity duration-300 ${showTransition ? 'opacity-0' : 'opacity-100'}`}>
+            {children}
+          </div>
+        </Suspense>
+      </ErrorBoundary>
+    </>
   );
 });
 
