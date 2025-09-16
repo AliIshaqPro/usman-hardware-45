@@ -30,7 +30,7 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
-import { EnhancedPurchaseOrderForm } from "@/components/purchase-orders/EnhancedPurchaseOrderForm";
+import { SinglePurchaseOrderForm } from "@/components/purchase-orders/SinglePurchaseOrderForm";
 import { apiConfig } from "@/utils/apiConfig";
 
 const PurchaseOrders = () => {
@@ -276,11 +276,8 @@ const PurchaseOrders = () => {
               New Purchase Order
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto p-0">
-            <DialogHeader className="p-6 pb-0">
-              <DialogTitle>Create New Purchase Order</DialogTitle>
-            </DialogHeader>
-            <EnhancedPurchaseOrderForm 
+          <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0">
+            <SinglePurchaseOrderForm 
               onSubmit={handleCreateOrder} 
               onClose={() => setIsCreateDialogOpen(false)}
               isLoading={createOrderMutation.isPending}
