@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 import { formatQuantity } from "@/lib/utils";
-import { usePageOptimization } from "@/hooks/usePageOptimization";
 
 interface CartItem {
   productId: number;
@@ -38,13 +37,6 @@ interface CartItem {
 const Sales = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
-  const { queryDefaults } = usePageOptimization({ 
-    pageName: 'sales',
-    preloadData: true,
-    staleTime: 1 * 60 * 1000, // 1 minute - sales data needs to be fresh
-    refetchInterval: 2 * 60 * 1000 // 2 minutes
-  });
-
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -630,14 +622,14 @@ const formatPakistaniTime = (timeString: string): string => {
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
-      pdf.text('ZAIDAWN HARDWARE', pageWidth / 2, yPos + 7, { align: 'center' });
+      pdf.text('USMAN HARDWARE', pageWidth / 2, yPos + 7, { align: 'center' });
       
       pdf.setFontSize(7);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Premium Furniture Hardware', pageWidth / 2, yPos + 13, { align: 'center' });
       pdf.text('Hafizabad, Punjab', pageWidth / 2, yPos + 18, { align: 'center' });
       pdf.text('+92-322-6506118', pageWidth / 2, yPos + 23, { align: 'center' });
-      pdf.text('www.zaidawn.site', pageWidth / 2, yPos + 28, { align: 'center' });
+      pdf.text('www.usmanhardware.com', pageWidth / 2, yPos + 28, { align: 'center' });
 
       yPos += 40;
 

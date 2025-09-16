@@ -227,35 +227,6 @@
     animation: fade-in 0.5s ease-out forwards;
   }
 
-  /* Page transition animations */
-  @keyframes page-enter {
-    from {
-      opacity: 0;
-      transform: scale(0.95) translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-    }
-  }
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
-
-  .animate-page-enter {
-    animation: page-enter 0.4s ease-out forwards;
-  }
-
-  .animate-shimmer {
-    animation: shimmer 2s infinite ease-in-out;
-  }
-
   /** 
    * Responsive overflow utility to prevent horizontal scroll on mobile.
    * Use `.no-horizontal-scroll` on root containers as needed.
