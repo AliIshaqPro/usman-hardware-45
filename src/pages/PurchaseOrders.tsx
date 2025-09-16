@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { FileText, Search, Plus, Calendar, Truck, DollarSign, User, Package, CheckCircle, Clock, XCircle, Loader2, Eye, Edit, Trash2, Send, PackageCheck } from "lucide-react";
+import { FileText, Search, Plus, Calendar, Truck, DollarSign, User, Package, CheckCircle, Clock, XCircle, Loader2, Eye, Edit, Trash2, Send, PackageCheck, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { purchaseOrdersApi, suppliersApi, productsApi } from "@/services/api";
@@ -30,6 +30,12 @@ import {
   PaginationNext, 
   PaginationPrevious 
 } from "@/components/ui/pagination";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 import { SinglePurchaseOrderForm } from "@/components/purchase-orders/SinglePurchaseOrderForm";
 import { apiConfig } from "@/utils/apiConfig";
 
@@ -388,6 +394,7 @@ const PurchaseOrders = () => {
                 <TableHead>Supplier</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Expected Delivery</TableHead>
+                <TableHead>Items</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Total Amount</TableHead>
                 <TableHead>Actions</TableHead>
@@ -401,6 +408,51 @@ const PurchaseOrders = () => {
                   <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
                   <TableCell>
                     {order.expectedDelivery ? new Date(order.expectedDelivery).toLocaleDateString() : 'Not set'}
+                  </TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Info className="h-4 w-4 text-primary" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-sm p-4">
+                          <div className="space-y-3">
+                            <div className="text-sm font-semibold text-foreground border-b border-border pb-2">
+                              Order Items ({order.items?.length || 0})
+                            </div>
+                            <div className="max-h-40 overflow-y-auto space-y-2">
+                              {order.items?.map((item: any, index: number) => (
+                                <div key={index} className="flex justify-between items-start gap-3 text-xs">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-foreground truncate">
+                                      {item.productName || item.name}
+                                    </div>
+                                    <div className="text-muted-foreground">
+                                      Qty: {item.quantity} × Rs. {item.unitPrice?.toLocaleString()}
+                                    </div>
+                                  </div>
+                                  <div className="text-right font-medium text-foreground">
+                                    Rs. {(item.quantity * item.unitPrice)?.toLocaleString()}
+                                  </div>
+                                </div>
+                              )) || (
+                                <div className="text-xs text-muted-foreground">No items found</div>
+                              )}
+                            </div>
+                            {order.items?.length > 0 && (
+                              <div className="pt-2 border-t border-border">
+                                <div className="flex justify-between text-sm font-semibold text-foreground">
+                                  <span>Total:</span>
+                                  <span>Rs. {order.total?.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(order.status)}>
