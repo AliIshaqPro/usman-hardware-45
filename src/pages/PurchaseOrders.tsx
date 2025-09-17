@@ -202,15 +202,21 @@ const PurchaseOrders = () => {
       case "draft":
         return [
           { value: "sent", label: "Send to Supplier" },
+          { value: "confirmed", label: "Mark as Confirmed" },
+          { value: "received", label: "Mark as Received" },
           { value: "cancelled", label: "Cancel Order" }
         ];
       case "sent":
         return [
+          { value: "sent", label: "Send to Supplier" },
           { value: "confirmed", label: "Mark as Confirmed" },
+          { value: "received", label: "Mark as Received" },
           { value: "cancelled", label: "Cancel Order" }
         ];
       case "confirmed":
         return [
+          { value: "sent", label: "Send to Supplier" },
+          { value: "confirmed", label: "Mark as Confirmed" },
           { value: "received", label: "Mark as Received" },
           { value: "cancelled", label: "Cancel Order" }
         ];

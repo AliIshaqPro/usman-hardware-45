@@ -97,7 +97,7 @@ export function PeriodComparisonChart({ data, isLoading }: PeriodComparisonChart
   return (
     <div className="space-y-6">
       {/* Beautiful Unified Chart */}
-      <Card className="bg-gradient-to-br from-slate-50/50 via-white to-slate-50/50 dark:from-slate-900/50 dark:via-slate-800 dark:to-slate-900/50 border-0 shadow-xl">
+      <Card className="col-span-1 shadow-xl border-0 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
         <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -128,7 +128,7 @@ export function PeriodComparisonChart({ data, isLoading }: PeriodComparisonChart
           </div>
 
           {/* Enhanced Area Chart */}
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer  width="100%" height={400}>
             <AreaChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
               <defs>
                 <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
