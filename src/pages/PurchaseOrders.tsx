@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -408,140 +407,138 @@ const PurchaseOrders = () => {
             </TableHeader>
             <TableBody>
               {filteredOrders.map((order: any) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.orderNumber}</TableCell>
-                  <TableCell>{order.supplierName}</TableCell>
-                  <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    {order.expectedDelivery ? new Date(order.expectedDelivery).toLocaleDateString() : 'Not set'}
-                  </TableCell>
-                  <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                            <Info className="h-4 w-4 text-primary" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="max-w-sm p-4">
-                          <div className="space-y-3">
-                            <div className="text-sm font-semibold text-foreground border-b border-border pb-2">
-                              Order Items ({order.items?.length || 0})
-                            </div>
-                            <div className="max-h-40 overflow-y-auto space-y-2">
-                              {order.items?.map((item: any, index: number) => (
-                                <div key={index} className="flex justify-between items-start gap-3 text-xs">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-foreground truncate">
-                                      {item.productName || item.name}
-                                    </div>
-                                    <div className="text-muted-foreground">
-                                      Qty: {item.quantity} × Rs. {item.unitPrice?.toLocaleString()}
-                                    </div>
-                                  </div>
-                                  <div className="text-right font-medium text-foreground">
-                                    Rs. {(item.quantity * item.unitPrice)?.toLocaleString()}
-                                  </div>
-                                </div>
-                              )) || (
-                                <div className="text-xs text-muted-foreground">No items found</div>
-                              )}
-                            </div>
-                            {order.items?.length > 0 && (
-                              <div className="pt-2 border-t border-border">
-                                <div className="flex justify-between text-sm font-semibold text-foreground">
-                                  <span>Total:</span>
-                                  <span>Rs. {order.total?.toLocaleString()}</span>
-                                </div>
-                              </div>
+                <TooltipProvider key={order.id}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <TableRow className="cursor-pointer">
+                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
+                        <TableCell>{order.supplierName}</TableCell>
+                        <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          {order.expectedDelivery ? new Date(order.expectedDelivery).toLocaleDateString() : 'Not set'}
+                        </TableCell>
+                        <TableCell>
+                          {order.items?.length || 0} items
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(order.status)}>
+                            {getStatusIcon(order.status)}
+                            <span className="ml-1 capitalize">{order.status}</span>
+                          </Badge>
+                        </TableCell>
+                        <TableCell>Rs. {order.total?.toLocaleString()}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewOrder(order)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            
+                            {getAvailableStatusTransitions(order.status).length > 0 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditStatus(order)}
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                {updateStatusMutation.isPending ? (
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Edit className="h-3 w-3 mr-1" />
+                                )}
+                                Update
+                              </Button>
+                            )}
+
+                            {order.status === "draft" && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-red-600"
+                                    disabled={deleteOrderMutation.isPending}
+                                  >
+                                    {deleteOrderMutation.isPending ? (
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-3 w-3 mr-1" />
+                                    )}
+                                    Delete
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Delete Purchase Order</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to delete this purchase order? This action cannot be undone.
+                                      Only draft orders can be deleted.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => deleteOrderMutation.mutate(order.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                      disabled={deleteOrderMutation.isPending}
+                                    >
+                                      {deleteOrderMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                          Deleting...
+                                        </>
+                                      ) : (
+                                        "Delete"
+                                      )}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             )}
                           </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(order.status)}>
-                      {getStatusIcon(order.status)}
-                      <span className="ml-1 capitalize">{order.status}</span>
-                    </Badge>
-                  </TableCell>
-                  <TableCell>Rs. {order.total?.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewOrder(order)}
-                      >
-                        <Eye className="h-3 w-3 mr-1" />
-                        View
-                      </Button>
-                      
-                      {getAvailableStatusTransitions(order.status).length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditStatus(order)}
-                          disabled={updateStatusMutation.isPending}
-                        >
-                          {updateStatusMutation.isPending ? (
-                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          ) : (
-                            <Edit className="h-3 w-3 mr-1" />
+                        </TableCell>
+                      </TableRow>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-sm p-4">
+                      <div className="space-y-3">
+                        <div className="text-sm font-semibold text-foreground border-b border-border pb-2">
+                          Order Items ({order.items?.length || 0})
+                        </div>
+                        <div className="max-h-40 overflow-y-auto space-y-2">
+                          {order.items?.map((item: any, index: number) => (
+                            <div key={index} className="flex justify-between items-start gap-3 text-xs">
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-foreground truncate">
+                                  {item.productName || item.name}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  Qty: {item.quantity} × Rs. {item.unitPrice?.toLocaleString()}
+                                </div>
+                              </div>
+                              <div className="text-right font-medium text-foreground">
+                                Rs. {(item.quantity * item.unitPrice)?.toLocaleString()}
+                              </div>
+                            </div>
+                          )) || (
+                            <div className="text-xs text-muted-foreground">No items found</div>
                           )}
-                          Update
-                        </Button>
-                      )}
-
-                      {order.status === "draft" && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-red-600"
-                              disabled={deleteOrderMutation.isPending}
-                            >
-                              {deleteOrderMutation.isPending ? (
-                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-3 w-3 mr-1" />
-                              )}
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Purchase Order</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this purchase order? This action cannot be undone.
-                                Only draft orders can be deleted.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => deleteOrderMutation.mutate(order.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                                disabled={deleteOrderMutation.isPending}
-                              >
-                                {deleteOrderMutation.isPending ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Deleting...
-                                  </>
-                                ) : (
-                                  "Delete"
-                                )}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+                        </div>
+                        {order.items?.length > 0 && (
+                          <div className="pt-2 border-t border-border">
+                            <div className="flex justify-between text-sm font-semibold text-foreground">
+                              <span>Total:</span>
+                              <span>Rs. {order.total?.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               ))}
             </TableBody>
           </Table>

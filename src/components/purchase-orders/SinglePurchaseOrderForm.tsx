@@ -277,16 +277,13 @@ export const SinglePurchaseOrderForm = ({ onSubmit, onClose, isLoading }: Purcha
   };
 
   return (
-    <div className="w-full p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+    <div className="w-full p-6 pt-0 space-y-6 max-h-[90vh] bg-white overflow-y-auto">
       {/* Header */}
-      <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur-sm pb-4 border-b z-10">
-        <div>
+      <div className="flex items-center justify-between sticky top-0 bg-white pb-4 border-b z-10">
+        <div className="p-3 pl-0">
           <h2 className="text-2xl font-bold text-foreground">Create Purchase Order</h2>
           <p className="text-sm text-muted-foreground">Fill in the details to create a new purchase order</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -511,6 +508,18 @@ export const SinglePurchaseOrderForm = ({ onSubmit, onClose, isLoading }: Purcha
               <div className="space-y-3">
                 {items.length > 0 ? (
                   <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {/* Column Headers */}
+                    <div className="flex items-center gap-3 px-2 py-1 text-sm font-medium text-muted-foreground">
+                      <div className="flex-1 min-w-0">Product Name</div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="w-16 text-center">Quantity</div>
+                        <div className="w-20 text-center">Unit Price</div>
+                        <div className="w-20 text-center">Total</div>
+                        <div className="w-7"></div>
+                      </div>
+                    </div>
+                    
+                    {/* Product Items */}
                     {items.map((item) => (
                       <Card key={item.productId} className="border hover:shadow-sm transition-shadow">
                         <CardContent className="p-2">
